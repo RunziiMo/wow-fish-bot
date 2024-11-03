@@ -25,9 +25,9 @@ def resource_path(relative_path):
   
 def app_pause(systray):
     global is_stop
-    is_stop = False if is_stop is True else True
     # print ("Is Pause: " + str(is_stop))
-    if is_stop is True:
+    if is_stop:
+        is_stop = False
         systray.update(
             hover_text=app + " - On Pause") 
     else:
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     flag_exit = False
     lastx = 0
     lasty = 0
-    is_block = False
+    is_fishing = False
     new_cast_time = 0
     recast_time = 40
     wait_mes = 0    
@@ -63,37 +63,42 @@ if __name__ == "__main__":
     toaster.show_toast(app,
                        link,
                        icon_path=app_ico,
-                       duration=5)    
+                       duration=5)
+    GAME_NAME = "魔兽世界"
     while flag_exit is False:
         if is_stop == False:
-            if GetWindowText(GetForegroundWindow()) != "World of Warcraft":
+            if GetWindowText(GetForegroundWindow()) != GAME_NAME:
                 if wait_mes == 5:
                     wait_mes = 0
                     toaster.show_toast(app,
-                                       "Waiting for World of Warcraft"
-                                       + " as active window",
-                                       icon_path='wow-fish-bot.ico',
-                                       duration=5)                  
+                                        f"Waiting for {GAME_NAME}"
+                                        + " as active window",
+                                        icon_path='wow-fish-bot.ico',
+                                        duration=5)                  
                 # print("Waiting for World of Warcraft as active window")
                 systray.update(
                     hover_text=app
-                    + " - Waiting for World of Warcraft as active window")
+                    + f" - Waiting for {GAME_NAME} as active window")
                 wait_mes += 1
                 time.sleep(2)
             else:
                 systray.update(hover_text=app)
-                rect = GetWindowRect(GetForegroundWindow())
                 
-                if is_block == False:
+                if is_fishing == False:
                     lastx = 0
                     lasty = 0
-                    pyautogui.press('1')
+                    pyautogui.press('r')
                     # print("Fish on !")
                     new_cast_time = time.time()
-                    is_block = True
+                    is_fishing = True
                     time.sleep(2)
                 else:
-                    fish_area = (0, rect[3] / 2, rect[2], rect[3])
+                    rect = GetWindowRect(GetForegroundWindow())
+                    left = rect[2] / 3
+                    top = rect[3] / 4
+                    right = rect[2] * 2 / 3
+                    bottom = rect[3] * 2 / 3
+                    fish_area = (left, top, right, bottom)
     
                     img = ImageGrab.grab(fish_area)
                     img_np = np.array(img)
@@ -119,26 +124,32 @@ if __name__ == "__main__":
                         b_y = int(dM01 / dArea)
                     if lastx > 0 and lasty > 0:
                         if lastx != b_x and lasty != b_y:
-                            is_block = False
-                            if b_x < 1: b_x = lastx
-                            if b_y < 1: b_y = lasty
-                            pyautogui.moveTo(b_x, b_y + fish_area[1], 0.3)
-                            pyautogui.keyDown('shiftleft')
+                            is_fishing = False
+                            if b_x < 1:
+                                b_x = lastx
+                            if b_y < 1:
+                                b_y = lasty
+                            pyautogui.moveTo(b_x + fish_area[0], b_y + fish_area[1], 0.3)
+                            # pyautogui.keyDown('shiftleft')
                             pyautogui.mouseDown(button='right')
                             pyautogui.mouseUp(button='right')
-                            pyautogui.keyUp('shiftleft')
+                            # pyautogui.keyUp('shiftleft')
                             # print("Catch !")
+                            # show windows with mask
+                            # cv2.imshow("fish_mask", mask)
+                            # cv2.imwrite(f"./fish_mask_{new_cast_time}.jpg", mask)
+                            # cv2.imshow("fish_frame", frame)
+                            # cv2.imwrite(f"./fish_frame_{new_cast_time}.jpg", frame)
+                            # if cv2.waitKey(10000) == 27:
+                            #    break
+                            # cv2.destroyAllWindows()
                             time.sleep(5)
                     lastx = b_x
                     lasty = b_y
-                    
-                    # show windows with mask
-                    # cv2.imshow("fish_mask", mask)
-                    # cv2.imshow("fish_frame", frame)
     
                     if time.time() - new_cast_time > recast_time:
                         # print("New cast if something wrong")
-                        is_block = False               
+                        is_fishing = False               
             if cv2.waitKey(1) == 27:
                 break
         else:
